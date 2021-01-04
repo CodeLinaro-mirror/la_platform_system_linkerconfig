@@ -21,8 +21,32 @@
 #include "linkerconfig/apex.h"
 #include "linkerconfig/log.h"
 
+using android::base::Result;
+
 namespace {
 constexpr const char* kDataAsanPath = "/data/asan";
+
+Result<void> VerifyIfApexNamespaceContainsAllSharedLink(
+    const android::linkerconfig::modules::Namespace& ns) {
+  auto apex_name = ns.GetApexSource();
+  // If namespace is not from APEX there is no need to check this.
+  // TODO(b/130340935): Also do not allow all shared links from ART APEX.
+  if (apex_name == "" || apex_name == "com.android.art") {
+    return {};
+  }
+
+  const auto& links = ns.Links();
+  for (const auto& link : links) {
+    if (link.IsAllSharedLibsAllowed()) {
+      return Errorf(
+          "APEX namespace {} is not allowed to have link with all shared libs "
+          "allowed.",
+          ns.GetName());
+    }
+  }
+  return {};
+}
+
 }  // namespace
 
 namespace android {
@@ -33,8 +57,16 @@ void InitializeWithApex(Namespace& ns, const ApexInfo& apex_info) {
   ns.AddSearchPath(apex_info.path + "/${LIB}");
   ns.AddPermittedPath(apex_info.path + "/${LIB}");
   ns.AddPermittedPath("/system/${LIB}");
+  for (const auto& permitted_path : apex_info.permitted_paths) {
+    ns.AddPermittedPath(permitted_path);
+  }
+  if (apex_info.has_shared_lib) {
+    // TODO(b/161542925) : Replace with common APEX path name
+    ns.AddPermittedPath("/apex/com.android.apex.test.sharedlibs/${LIB}");
+  }
   ns.AddProvides(apex_info.provide_libs);
   ns.AddRequires(apex_info.require_libs);
+  ns.SetApexSource(apex_info.name);
 }
 
 Link& Namespace::GetLink(const std::string& target_namespace) {
@@ -47,6 +79,13 @@ Link& Namespace::GetLink(const std::string& target_namespace) {
 }
 
 void Namespace::WriteConfig(ConfigWriter& writer) {
+  auto verify_result = VerifyContents();
+  if (!verify_result.ok()) {
+    LOG(ERROR) << "Namespace " << name_
+               << " is not valid : " << verify_result.error();
+    return;
+  }
+
   const auto prefix = "namespace." + name_ + ".";
 
   writer.WriteLine(prefix + "isolated = " + (is_isolated_ ? "true" : "false"));
@@ -59,17 +98,18 @@ void Namespace::WriteConfig(ConfigWriter& writer) {
   writer.WriteVars(prefix + "permitted.paths", permitted_paths_);
   writer.WriteVars(prefix + "asan.search.paths", asan_search_paths_);
   writer.WriteVars(prefix + "asan.permitted.paths", asan_permitted_paths_);
-  writer.WriteVars(prefix + "whitelisted", whitelisted_);
+  writer.WriteVars(prefix + "allowed_libs", allowed_libs_);
 
-  if (!links_.empty()) {
-    std::vector<std::string> link_list;
-    link_list.reserve(links_.size());
-    for (const auto& link : links_) {
-      link_list.push_back(link.To());
-    }
+  std::vector<std::string> link_list;
+  link_list.reserve(links_.size());
+  for (const auto& link : links_) {
+    if (link.Empty()) continue;
+    link_list.push_back(link.To());
+  }
+  if (!link_list.empty()) {
     writer.WriteLine(prefix + "links = " + android::base::Join(link_list, ","));
-
     for (const auto& link : links_) {
+      if (link.Empty()) continue;
       link.WriteConfig(writer);
     }
   }
@@ -93,8 +133,8 @@ void Namespace::AddPermittedPath(const std::string& path) {
   asan_permitted_paths_.push_back(path);
 }
 
-void Namespace::AddWhitelisted(const std::string& path) {
-  whitelisted_.push_back(path);
+void Namespace::AddAllowedLib(const std::string& path) {
+  allowed_libs_.push_back(path);
 }
 
 std::string Namespace::GetName() const {
@@ -107,6 +147,16 @@ bool Namespace::RequiresAsanPath(const std::string& path) {
 
 const std::string Namespace::CreateAsanPath(const std::string& path) {
   return kDataAsanPath + path;
+}
+
+Result<void> Namespace::VerifyContents() {
+  auto apex_with_all_shared_link =
+      VerifyIfApexNamespaceContainsAllSharedLink(*this);
+  if (!apex_with_all_shared_link.ok()) {
+    return apex_with_all_shared_link.error();
+  }
+
+  return {};
 }
 
 }  // namespace modules
