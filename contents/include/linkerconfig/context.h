@@ -15,6 +15,9 @@
  */
 #pragma once
 
+#include <functional>
+#include <map>
+#include <optional>
 #include <string>
 
 #include "linkerconfig/basecontext.h"
@@ -22,6 +25,10 @@
 namespace android {
 namespace linkerconfig {
 namespace contents {
+
+class Context;
+using ApexNamespaceBuilder =
+    std::function<modules::Namespace(const Context&, const modules::ApexInfo&)>;
 
 enum class SectionType {
   System,
@@ -66,9 +73,16 @@ class Context : public modules::BaseContext {
   // Returns the namespace that covers /system/${LIB}.
   std::string GetSystemNamespaceName() const;
 
+  modules::Namespace BuildApexNamespace(const modules::ApexInfo& apex_info,
+                                        bool visible) const override;
+  void RegisterApexNamespaceBuilder(const std::string& name,
+                                    ApexNamespaceBuilder builder);
+
   bool IsSectionVndkEnabled() const;
 
  private:
+  std::map<std::string, ApexNamespaceBuilder> builders_;
+
   SectionType current_section_;
   LinkerConfigType current_linkerconfig_type_;
   const modules::ApexInfo* current_apex_;
