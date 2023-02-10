@@ -26,9 +26,13 @@ cc_defaults {
         "-Wextra",
     ],
     defaults: ["libapexutil-deps"],
+    shared_libs: [
+        // Because the runtime apex depends on the shared libbase,
+        // linkerconfig can use it as shared as well to save more bits.
+        "libbase",
+    ],
     static_libs: [
         "libapexutil",
-        "libbase",
         "liblog_for_runtime_apex",
         "libprotobuf-cpp-lite",
         "libtinyxml2",
@@ -67,7 +71,6 @@ cc_library_static {
     ],
     generated_sources: ["apex-info-list-tinyxml"],
     apex_available: [
-        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
@@ -87,7 +90,6 @@ cc_library_static {
         "contents/common/*.cc",
     ],
     apex_available: [
-        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
@@ -104,7 +106,6 @@ cc_library_static {
         "generator/*.cc",
     ],
     apex_available: [
-        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
@@ -128,8 +129,18 @@ cc_binary {
         // we can't list it here because the exact version is unknown at build-time. It is decided
         // at runtime according to ro.vndk.version (or ro.product.vndk.version)
     ],
-    // Link libc++ statically to avoid libc++ in runtime apex.
-    stl: "c++_static",
+    target: {
+        host: {
+            // Link libc++ and libbase statically on host for convenience(no need to set library paths)
+            stl: "c++_static",
+            static_libs: [
+                "libbase",
+            ],
+            exclude_shared_libs: [
+                "libbase",
+            ],
+        },
+    },
 
     // Device does not boot when global ThinLTO is enabled for linkerconfig.
     // http://b/170573443
@@ -138,7 +149,6 @@ cc_binary {
     },
 
     apex_available: [
-        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
