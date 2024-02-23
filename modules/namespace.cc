@@ -72,12 +72,6 @@ void InitializeWithApex(Namespace& ns, const ApexInfo& apex_info) {
   }
   ns.AddProvides(apex_info.provide_libs);
   ns.AddRequires(apex_info.require_libs);
-  // TODO(b/296491928) Vendor APEX should use its own libbinder_ndk when VNDK is
-  // deprecated.
-  if (apex_info.InVendor() &&
-      !android::linkerconfig::modules::IsVendorVndkVersionDefined()) {
-    ns.AddRequires(std::vector{"libbinder.so"});
-  }
   ns.SetApexSource(ApexSource{apex_info.name, apex_info.InVendor()});
 }
 
@@ -90,7 +84,7 @@ Link& Namespace::GetLink(const std::string& target_namespace) {
   return links_.emplace_back(name_, target_namespace);
 }
 
-void Namespace::WriteConfig(ConfigWriter& writer) {
+void Namespace::WriteConfig(ConfigWriter& writer) const {
   auto verify_result = VerifyContents();
   if (!verify_result.ok()) {
     LOG(ERROR) << "Namespace " << name_
@@ -169,7 +163,7 @@ const std::string Namespace::CreateAsanPath(const std::string& path) {
   return kDataAsanPath + path;
 }
 
-Result<void> Namespace::VerifyContents() {
+Result<void> Namespace::VerifyContents() const {
   auto apex_with_all_shared_link =
       VerifyIfApexNamespaceContainsAllSharedLink(*this);
   if (!apex_with_all_shared_link.ok()) {
