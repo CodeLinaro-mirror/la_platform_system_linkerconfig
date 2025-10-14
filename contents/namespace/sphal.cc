@@ -77,6 +77,13 @@ Namespace BuildSphalNamespace([[maybe_unused]] const Context& ctx) {
     }
   }
 
+  // The sphal namespace provides the vendor libraries from e.g. /vendor/lib64.
+  // Hence it should inherit the same provide/require constraints from the
+  // vendor partition. Otherwise, a library in this namespace can't depend on
+  // libraries moved to a vendor apex.
+  ns.AddRequires(ctx.GetVendorRequireLibs());
+  ns.AddProvides(ctx.GetVendorProvideLibs());
+
   return ns;
 }
 }  // namespace contents
