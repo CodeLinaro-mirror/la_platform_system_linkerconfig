@@ -66,7 +66,6 @@ void LoadVariableFromPartitionPath(const std::string& root,
 }
 
 void LoadPartitionPathVariables(const std::string& root) {
-  // TODO(b/141714913): generalize path handling
   LoadVariableFromPartitionPath(root, "PRODUCT", "/product");
   LoadVariableFromPartitionPath(root, "SYSTEM_EXT", "/system_ext");
 }
