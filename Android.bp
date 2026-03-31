@@ -26,14 +26,8 @@ cc_defaults {
         "-Wextra",
     ],
     defaults: ["libapexutil-deps"],
-    shared_libs: [
-        // Because the runtime apex depends on the shared libbase,
-        // linkerconfig can use it as shared as well to save more bits.
-        "libbase",
-    ],
     static_libs: [
         "libapexutil",
-        "liblog_for_runtime_apex",
         "libprotobuf-cpp-lite",
         "libtinyxml2",
         "lib_linker_config_proto_lite",
@@ -64,21 +58,22 @@ cc_defaults {
 
 cc_library_static {
     name: "linkerconfig_modules",
-    defaults: [ "linkerconfig_defaults" ],
-    export_include_dirs: [ "modules/include" ],
+    defaults: ["linkerconfig_defaults"],
+    export_include_dirs: ["modules/include"],
     srcs: [
         "modules/*.cc",
     ],
     generated_sources: ["apex-info-list-tinyxml"],
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
 
 cc_library_static {
     name: "linkerconfig_contents",
-    defaults: [ "linkerconfig_defaults" ],
-    export_include_dirs: [ "contents/include" ],
+    defaults: ["linkerconfig_defaults"],
+    export_include_dirs: ["contents/include"],
     static_libs: [
         "linkerconfig_modules",
     ],
@@ -90,14 +85,15 @@ cc_library_static {
         "contents/common/*.cc",
     ],
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
 
 cc_library_static {
     name: "linkerconfig_generator",
-    defaults : [ "linkerconfig_defaults" ],
-    export_include_dirs: [ "generator/include" ],
+    defaults: ["linkerconfig_defaults"],
+    export_include_dirs: ["generator/include"],
     static_libs: [
         "linkerconfig_modules",
         "linkerconfig_contents",
@@ -106,13 +102,14 @@ cc_library_static {
         "generator/*.cc",
     ],
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
 
 cc_binary {
     name: "linkerconfig",
-    defaults: [ "linkerconfig_defaults" ],
+    defaults: ["linkerconfig_defaults"],
     static_libs: [
         "linkerconfig_modules",
         "linkerconfig_contents",
@@ -131,14 +128,17 @@ cc_binary {
             stl: "c++_static",
             static_libs: [
                 "libbase",
+                "liblog",
             ],
             exclude_shared_libs: [
                 "libbase",
+                "liblog",
             ],
         },
     },
 
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 
@@ -151,7 +151,7 @@ cc_binary {
 
 cc_test_host {
     name: "linkerconfig_modules_unittest",
-    defaults: [ "linkerconfig_test_defaults" ],
+    defaults: ["linkerconfig_test_defaults"],
     srcs: [
         "modules/tests/*_test.cc",
     ],
@@ -169,7 +169,7 @@ cc_test_host {
 
 cc_test_host {
     name: "linkerconfig_backward_compatibility_test",
-    defaults: [ "linkerconfig_test_defaults" ],
+    defaults: ["linkerconfig_test_defaults"],
     srcs: [
         "contents/tests/backward_compatibility/*_test.cc",
     ],
@@ -184,7 +184,7 @@ cc_test_host {
 
 cc_test_host {
     name: "linkerconfig_generator_unittest",
-    defaults: [ "linkerconfig_test_defaults" ],
+    defaults: ["linkerconfig_test_defaults"],
     srcs: [
         "generator/tests/*_test.cc",
     ],
@@ -203,7 +203,7 @@ cc_test_host {
 
 cc_test_host {
     name: "linkerconfig_contents_fulltest",
-    defaults: [ "linkerconfig_test_defaults" ],
+    defaults: ["linkerconfig_test_defaults"],
     // TODO(b/231993627): Reenable isolated:true by deleting the explicit disable below
     isolated: false,
     local_include_dirs: [

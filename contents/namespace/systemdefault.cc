@@ -43,6 +43,7 @@ void SetupSystemPermittedPaths(Namespace* ns) {
       "/system/${LIB}/drm",
       "/system/${LIB}/extractors",
       "/system/${LIB}/hw",
+      "/system/${LIB}/vulkan",
       system_ext + "/${LIB}",
 
       // These are where odex files are located. libart has to be able to dlopen
@@ -67,6 +68,7 @@ void SetupSystemPermittedPaths(Namespace* ns) {
       product + "/framework",
       product + "/app",
       product + "/priv-app",
+      product + "/${LIB}/vulkan",
       "/data",
       "/mnt/expand",
       "/apex/com.android.runtime/${LIB}/bionic",
