@@ -26,14 +26,8 @@ cc_defaults {
         "-Wextra",
     ],
     defaults: ["libapexutil-deps"],
-    shared_libs: [
-        // Because the runtime apex depends on the shared libbase,
-        // linkerconfig can use it as shared as well to save more bits.
-        "libbase",
-    ],
     static_libs: [
         "libapexutil",
-        "liblog_for_runtime_apex",
         "libprotobuf-cpp-lite",
         "libtinyxml2",
         "lib_linker_config_proto_lite",
@@ -71,6 +65,7 @@ cc_library_static {
     ],
     generated_sources: ["apex-info-list-tinyxml"],
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
@@ -90,6 +85,7 @@ cc_library_static {
         "contents/common/*.cc",
     ],
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
@@ -106,6 +102,7 @@ cc_library_static {
         "generator/*.cc",
     ],
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 }
@@ -131,14 +128,17 @@ cc_binary {
             stl: "c++_static",
             static_libs: [
                 "libbase",
+                "liblog",
             ],
             exclude_shared_libs: [
                 "libbase",
+                "liblog",
             ],
         },
     },
 
     apex_available: [
+        "//apex_available:platform",
         "com.android.runtime",
     ],
 
