@@ -36,8 +36,6 @@ Section BuildProductSection(Context& ctx) {
 
   namespaces.emplace_back(BuildProductDefaultNamespace(ctx));
 
-  namespaces.emplace_back(BuildSphalNamespace(ctx));
-
   if (android::linkerconfig::modules::IsProductVndkVersionDefined()) {
     namespaces.emplace_back(BuildVndkNamespace(ctx, VndkUserPartition::Product));
   }
